@@ -314,16 +314,16 @@ html[data-theme="light"] .toast button{color:#8FB0FF}
 
 /* ---- ① ここに Firebase の設定を貼り付けてください（未設定でも動きます） ---- */
 const FIREBASE_CONFIG = {
-  apiKey:            "",   // 例: "AIzaSy..."
-  authDomain:        "",   // 例: "my-trip.firebaseapp.com"
-  databaseURL:       "",   // 例: "https://my-trip-default-rtdb.asia-southeast1.firebasedatabase.app"  ← これが空の間はローカル保存のみ
-  projectId:         "",
-  storageBucket:     "",
-  messagingSenderId: "",
-  appId:             ""
+  apiKey:            "AIzaSyAfDuI3P9oHimO_6Jv80Ug3SSrGTF1eM1I",
+  authDomain:        "trip-987a0.firebaseapp.com",
+  databaseURL:       "https://trip-987a0-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId:         "trip-987a0",
+  storageBucket:     "trip-987a0.firebasestorage.app",
+  messagingSenderId: "80217001522",
+  appId:             "1:80217001522:web:b6d9ffaa0eec357ce0362b"
 };
 /* 家族で共有する部屋名。URL に #room=xxxx を付けると切り替わります */
-let ROOM_ID = (location.hash.match(/room=([A-Za-z0-9_-]+)/) || [,"family"])[1];
+let ROOM_ID = (location.hash.match(/room=([A-Za-z0-9_-]+)/) || [,"kazoku-7m4qx2"])[1];
 
 /* ------------------------- 定数 ------------------------- */
 const DAY_START = 6 * 60;      // 標準の表示開始 6:00
