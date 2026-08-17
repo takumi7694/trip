@@ -1,0 +1,1214 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="旅程">
+<title>旅程プランナー</title>
+<style>
+:root{
+  --bg:#ffffff; --panel:#f1f3f4; --panel2:#f8f9fa; --line:#e0e3e7; --line2:#c8ccd1;
+  --text:#202124; --sub:#5f6368; --accent:#1a73e8; --danger:#d93025;
+  --head-h:104px; --hour-h:60px; --gutter:52px;
+  --safe-b:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;height:100%;overflow:hidden}
+body{
+  background:var(--bg); color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Noto Sans JP","Segoe UI",Roboto,sans-serif;
+  font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
+button{background:none;border:0;padding:0;cursor:pointer}
+.app{display:flex;flex-direction:column;height:100%;max-width:760px;margin:0 auto;position:relative}
+
+/* ---------- header ---------- */
+header{background:var(--bg);border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top,0px);flex:0 0 auto;z-index:20}
+.hrow{display:flex;align-items:center;gap:8px;padding:10px 12px 6px}
+.title{flex:1;min-width:0}
+.title h1{margin:0;font-size:17px;font-weight:700;letter-spacing:.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.title .sub{font-size:11px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.iconbtn{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--text);background:var(--panel)}
+.iconbtn:active{background:var(--panel2)}
+.sync{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--sub);padding:3px 8px;border-radius:999px;background:var(--panel);white-space:nowrap}
+.dot{width:7px;height:7px;border-radius:50%;background:#5f6368;flex:0 0 auto}
+.dot.on{background:#188038;box-shadow:0 0 6px #18803855}
+.dot.wait{background:#f9ab00}
+.dot.err{background:var(--danger)}
+
+.tabs{display:flex;gap:6px;overflow-x:auto;padding:2px 12px 8px;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex:0 0 auto;min-width:52px;padding:5px 10px;border-radius:12px;background:var(--panel);text-align:center;line-height:1.25}
+.tab b{display:block;font-size:15px;font-weight:700}
+.tab span{display:block;font-size:10px;color:var(--sub)}
+.tab.active{background:var(--accent);color:#fff}
+.tab.active span{color:#fff;opacity:.8}
+
+.bar{display:flex;align-items:center;gap:6px;padding:0 8px 8px;overflow-x:auto;scrollbar-width:none}
+.bar::-webkit-scrollbar{display:none}
+.chip{flex:0 0 auto;display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:999px;background:var(--panel);font-size:11px;color:var(--text)}
+.chip .sw{width:9px;height:9px;border-radius:3px}
+.chip.off{opacity:.35}
+.act{flex:0 0 auto;display:flex;align-items:center;gap:4px;padding:6px 11px;border-radius:999px;background:var(--accent);color:#fff;font-size:11px;font-weight:700}
+.act.sec{background:#e8f0fe;color:var(--accent)}
+.act:active{opacity:.8}
+.vdiv{flex:0 0 auto;width:1px;height:18px;background:var(--line2);margin:0 3px}
+.seg{flex:0 0 auto;display:flex;background:var(--panel);border-radius:999px;padding:2px;margin-left:auto}
+.seg button{padding:5px 12px;border-radius:999px;font-size:11px;color:var(--sub)}
+.seg button.on{background:var(--panel2);color:var(--text);font-weight:600}
+
+/* ---------- timeline ---------- */
+.scroller{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;position:relative;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+.grid{display:flex;position:relative;padding-bottom:calc(90px + var(--safe-b))}
+.gutter{flex:0 0 var(--gutter);position:relative}
+.gutter .hlabel{position:absolute;right:6px;font-size:10px;color:var(--sub);transform:translateY(-6px)}
+.lanes{flex:1 1 auto;position:relative;border-left:1px solid var(--line)}
+.hline{position:absolute;left:0;right:0;height:0;border-top:1px solid var(--line)}
+.hline.half{border-top:1px dashed #f1f3f4}
+.nowline{position:absolute;left:-4px;right:0;height:0;border-top:2px solid var(--danger);z-index:6;pointer-events:none}
+.nowline::before{content:"";position:absolute;left:-4px;top:-5px;width:9px;height:9px;border-radius:50%;background:var(--danger)}
+.evlayer{position:absolute;inset:0}
+.ev{
+  position:absolute;border-radius:7px;padding:3px 7px;overflow:hidden;color:#fff;
+  font-size:12px;line-height:1.25;box-shadow:0 1px 2px rgba(60,64,67,.25);
+  transition:box-shadow .12s ease, transform .12s ease;
+}
+.ev .t{font-weight:700;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ev .m{font-size:10px;opacity:.92;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ev .lk{position:absolute;top:2px;right:2px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:11px;opacity:.8}
+.ev .hd{position:absolute;left:0;right:0;bottom:0;height:12px}
+.ev .hd::after{content:"";position:absolute;left:50%;bottom:3px;width:26px;height:3px;border-radius:2px;background:rgba(255,255,255,.55);transform:translateX(-50%)}
+.ev.small{padding:1px 6px}
+.ev.small .t{font-size:11px}
+.ev.dragging{z-index:30;box-shadow:0 8px 22px rgba(60,64,67,.4);transform:scale(1.02);opacity:.96}
+.ev.picked{outline:2px solid rgba(255,255,255,.9);outline-offset:-3px}
+.badge{position:fixed;z-index:60;background:#202124;color:#fff;border-radius:8px;padding:5px 10px;font-size:12px;font-weight:700;pointer-events:none;display:none;box-shadow:0 4px 12px rgba(60,64,67,.3)}
+
+/* ---------- list view ---------- */
+.list{padding:10px 12px calc(100px + var(--safe-b));display:none}
+.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:11px 12px;margin-bottom:9px;border-left:5px solid #666;position:relative;box-shadow:0 1px 2px rgba(60,64,67,.12)}
+.card .top{display:flex;align-items:baseline;gap:8px}
+.card .time{font-size:12px;color:var(--sub);font-variant-numeric:tabular-nums;flex:0 0 auto}
+.card .name{font-weight:700;font-size:15px;flex:1;min-width:0}
+.card .meta{margin-top:5px;font-size:12px;color:var(--sub);display:flex;flex-direction:column;gap:3px}
+.card .meta a{color:var(--accent);text-decoration:none;word-break:break-all}
+.stars{color:#f9ab00;letter-spacing:1px;font-size:12px}
+.catpill{font-size:10px;padding:2px 7px;border-radius:999px;color:#fff;font-weight:700}
+
+/* ---------- fab ---------- */
+.fab{position:absolute;right:16px;bottom:calc(18px + var(--safe-b));width:56px;height:56px;border-radius:18px;background:var(--accent);color:#fff;font-size:28px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(26,115,232,.4);z-index:25}
+.fab:active{transform:scale(.94)}
+
+/* ---------- sheet ---------- */
+.mask{position:fixed;inset:0;background:rgba(32,33,36,.45);z-index:40;opacity:0;pointer-events:none;transition:opacity .18s}
+.mask.on{opacity:1;pointer-events:auto}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-width:760px;margin:0 auto;background:#fff;border-radius:20px 20px 0 0;z-index:50;transform:translateY(101%);transition:transform .24s cubic-bezier(.2,.8,.2,1);max-height:92vh;display:flex;flex-direction:column;box-shadow:0 -6px 28px rgba(60,64,67,.28)}
+.sheet.on{transform:translateY(0)}
+.sheet .handle{width:38px;height:4px;border-radius:2px;background:var(--line2);margin:9px auto 4px;flex:0 0 auto}
+.sheet .body{overflow-y:auto;padding:6px 16px calc(20px + var(--safe-b));-webkit-overflow-scrolling:touch}
+.sheet h2{font-size:16px;margin:6px 0 12px}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:11px;color:var(--sub);margin-bottom:4px}
+.field input,.field select,.field textarea{
+  width:100%;background:#fff;border:1px solid var(--line2);border-radius:10px;padding:10px;outline:none;
+}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent)}
+.field textarea{min-height:64px;resize:vertical}
+.row2{display:flex;gap:8px}
+.row2>*{flex:1;min-width:0}
+.cats{display:flex;flex-wrap:wrap;gap:7px}
+.cats button{padding:7px 12px;border-radius:999px;background:var(--panel);font-size:12px;border:1px solid transparent}
+.cats button.on{color:#fff;font-weight:700}
+.starpick{display:flex;gap:4px;font-size:26px;color:#dadce0}
+.starpick span.on{color:#f9ab00}
+.btns{display:flex;gap:8px;margin-top:6px}
+.btn{flex:1;padding:13px;border-radius:12px;background:var(--panel);text-align:center;font-weight:700}
+.btn.pri{background:var(--accent);color:#fff}
+.btn.dan{background:#fce8e6;color:var(--danger)}
+.btn.sm{padding:9px;font-size:12px;font-weight:600}
+.det .dtitle{font-size:19px;font-weight:700;margin:2px 0 6px}
+.det .drow{display:flex;gap:9px;padding:9px 0;border-top:1px solid var(--line);font-size:13px}
+.det .drow .k{flex:0 0 76px;color:var(--sub);font-size:12px}
+.det .drow .v{flex:1;min-width:0;word-break:break-word}
+.det .drow .v a{color:var(--accent);text-decoration:none;word-break:break-all}
+.mini{font-size:11px;color:var(--sub);margin-top:-6px;margin-bottom:10px}
+.trashitem{display:flex;align-items:center;gap:8px;padding:9px 0;border-top:1px solid var(--line)}
+.trashitem .ti{flex:1;min-width:0}
+.trashitem .ti b{display:block;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.trashitem .ti span{font-size:11px;color:var(--sub)}
+.catedit{display:flex;align-items:center;gap:7px;padding:7px 0;border-top:1px solid var(--line)}
+.catedit input[type=color]{width:34px;height:34px;padding:0;border:0;background:none;flex:0 0 auto}
+.catedit input[type=text]{flex:1;background:#fff;border:1px solid var(--line2);border-radius:8px;padding:7px}
+.toast{position:fixed;left:50%;bottom:calc(24px + var(--safe-b));transform:translateX(-50%) translateY(20px);background:#202124;color:#fff;padding:11px 14px;border-radius:12px;font-size:13px;display:flex;align-items:center;gap:14px;z-index:70;opacity:0;pointer-events:none;transition:.2s;box-shadow:0 6px 18px rgba(60,64,67,.4);max-width:92vw}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto}
+.toast button{color:#8ab4f8;font-weight:700;flex:0 0 auto}
+.hint{font-size:11px;color:var(--sub);line-height:1.6;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:12px}
+.empty{text-align:center;color:var(--sub);font-size:13px;padding:30px 0}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="hrow">
+      <button class="iconbtn" id="btnMenu" aria-label="設定">☰</button>
+      <div class="title">
+        <h1 id="tripName">旅行</h1>
+        <div class="sub" id="tripRange"></div>
+      </div>
+      <div class="sync" id="syncBox"><span class="dot" id="syncDot"></span><span id="syncTxt">ローカル</span></div>
+    </div>
+    <div class="tabs" id="tabs"></div>
+    <div class="bar" id="legend"></div>
+  </header>
+
+  <div class="scroller" id="scroller">
+    <div class="grid" id="grid">
+      <div class="gutter" id="gutter"></div>
+      <div class="lanes" id="lanes">
+        <div class="evlayer" id="evlayer"></div>
+      </div>
+    </div>
+    <div class="list" id="listView"></div>
+  </div>
+
+  <button class="fab" id="fab" aria-label="予定を追加">＋</button>
+</div>
+
+<div class="badge" id="badge"></div>
+<div class="mask" id="mask"></div>
+
+<!-- 詳細 -->
+<div class="sheet" id="sheetDetail"><div class="handle"></div><div class="body det" id="detailBody"></div></div>
+<!-- 編集 -->
+<div class="sheet" id="sheetEdit"><div class="handle"></div><div class="body" id="editBody"></div></div>
+<!-- 設定 -->
+<div class="sheet" id="sheetMenu"><div class="handle"></div><div class="body" id="menuBody"></div></div>
+
+<div class="toast" id="toast"><span id="toastMsg"></span><button id="toastBtn" style="display:none"></button></div>
+
+<script>
+/* ============================================================
+   旅程プランナー  ―  single file / GitHub Pages ready
+   Firebase Realtime Database（任意）＋ localStorage フォールバック
+   ============================================================ */
+
+/* ---- ① ここに Firebase の設定を貼り付けてください（未設定でも動きます） ---- */
+const FIREBASE_CONFIG = {
+  apiKey:            "",   // 例: "AIzaSy..."
+  authDomain:        "",   // 例: "my-trip.firebaseapp.com"
+  databaseURL:       "",   // 例: "https://my-trip-default-rtdb.asia-southeast1.firebasedatabase.app"  ← これが空の間はローカル保存のみ
+  projectId:         "",
+  storageBucket:     "",
+  messagingSenderId: "",
+  appId:             ""
+};
+/* 家族で共有する部屋名。URL に #room=xxxx を付けると切り替わります */
+let ROOM_ID = (location.hash.match(/room=([A-Za-z0-9_-]+)/) || [,"family"])[1];
+
+/* ------------------------- 定数 ------------------------- */
+const DAY_START = 6 * 60;      // 6:00
+const DAY_END   = 27 * 60;     // 翌3:00（深夜の予定も置けるように24時以降まで表示）
+const PX_PER_MIN = 1;          // 1分 = 1px（1時間 = 60px）
+const SNAP = 30;               // ドラッグは30分刻み
+const LS_KEY = "tripPlanner-v3:" + ROOM_ID;
+
+const DEFAULT_CATEGORIES = {
+  sight:  { label:"観光",       color:"#1a73e8" },
+  food:   { label:"食事",       color:"#ef6c00" },
+  shop:   { label:"ショッピング", color:"#d81b60" },
+  move:   { label:"移動",       color:"#5f6368" },
+  stay:   { label:"宿泊",       color:"#8e24aa" },
+  night:  { label:"ナイトライフ", color:"#3f51b5" },
+  sports: { label:"スポーツ",    color:"#00897b" },
+  other:  { label:"その他",      color:"#0b8043" }
+};
+
+/* ------------------------- サンプル（添付エクセルの NY 旅程） ------------------------- */
+function seedData(){
+  const G = (q)=> "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(q);
+  const E = [
+    // ---------- 12/16(水) JFK 10:30着 ----------
+    ["2026-12-16",630,720,"✈ JFK到着 → 入国審査・荷物受取","move","John F. Kennedy International Airport, Queens, NY 11430","https://www.jfkairport.com/",5,"","10:30着。国際線は着陸→到着ロビーまで60〜90分が目安（混雑期は2時間超）。Global Entryがあれば大幅短縮、MPCは日本国籍は対象外",""],
+    ["2026-12-16",720,795,"JFK → Williamsburg 移動","move","JFK → 247 Metropolitan Ave, Brooklyn","",5,"","配車/タクシー 30〜60分・$60〜85（Uber平均$76）。節約ならAirTrain $8.75→A線→Broadway Junction→L線 Bedford Av で計$11.75・約80分。初日は荷物があるので車推奨。JFKは大規模工事中で場内道路の迂回に注意",""],
+    ["2026-12-16",795,825,"Pod Brooklyn 荷物預け","stay","247 Metropolitan Ave, Brooklyn, NY 11211","https://www.thepodhotel.com/pod-bk",4,"チェックイン15:00 / チェックアウト12:00 / 当日中の荷物預かりはフロントで可","チェックインは15:00からなので、まず荷物だけ預けて街へ。Facility Fee $29.84/泊・デポジット$30あり",""],
+    ["2026-12-16",840,885,"Apollo Bagels","food","133 N 7th St, Brooklyn, NY 11249","https://apollobagels.com/",5,"月-木 7:00-15:00 / 金-日 7:00-17:00（売り切れ次第終了の可能性）","水曜は15:00閉店。入国審査が押した場合は12/19朝に振替を。現代的なNYベーグルのブランド・店舗設計を見る",""],
+    ["2026-12-16",885,960,"Williamsburg 散策","sight","Bedford Ave / N 6th-7th St / Wythe Ave / East River","",4,"","ファッション・街並み・店舗を見る。Podから徒歩圏",""],
+    ["2026-12-16",960,1020,"Devoción","food","148 Grand St, Brooklyn, NY 11249","https://www.devocion.com/pages/new-york-coffee-shop-williamsburg-brooklyn",4,"月-金 7:00-18:00 / 土日 7:30-18:00","天窓・植栽・レンガの大空間。コーヒーショップの目的地化",""],
+    ["2026-12-16",1020,1060,"Pod Brooklyn チェックイン","stay","247 Metropolitan Ave, Brooklyn, NY 11211","https://www.thepodhotel.com/pod-bk",3,"チェックイン15:00-23:00","荷物を部屋に置いて身軽にしてから試合へ",""],
+    ["2026-12-16",1060,1100,"Barclays Center へ移動","move","620 Atlantic Ave, Brooklyn, NY 11217","",4,"","L線 Bedford Av → Union Sq → 4/5線 Atlantic Av-Barclays Ctr、または配車で25〜35分",""],
+    ["2026-12-16",1100,1160,"Nets Team Store / アリーナ視察","shop","185 Flatbush Ave, Brooklyn, NY 11217（Barclays Center メインコンコース内）","https://www.barclayscenter.com/center-info/team-store",4,"毎日 12:00-17:00＋Nets/Liberty の全試合中","開場は18:00（試合開始90分前）。Nets公式グッズとアリーナのリテール導線を見る",""],
+    ["2026-12-16",1170,1320,"Mavericks @ Nets","sports","Barclays Center, 620 Atlantic Ave, Brooklyn, NY 11217","https://www.barclayscenter.com/events/category/brooklyn-nets",5,"開場18:00（試合開始90分前）","2026-27の公式日程で 12/16(水) 19:30 開始と確認済み。放送都合で開始時刻が動く場合あり",""],
+    ["2026-12-16",1350,1410,"軽く1杯 / 早めに戻る","night","Williamsburg, Brooklyn","",2,"","初日は無理しない。時差もあるので早めに休む",""],
+    // ---------- 12/17(木) ----------
+    ["2026-12-17",480,540,"Edith's Sandwich Counter","food","495 Lorimer St, Brooklyn, NY 11211","https://edithsbk.com/sandwich-counter/",4,"月-木 8:00-15:00 / 金-日 8:00-17:00","旧 Edith's Eatery & Grocery(312 Leonard St)は閉店済み。ローカルフードの現代的再編集を見る",""],
+    ["2026-12-17",600,720,"Hoops Klub（Greenpoint）","sports","237 Russell St, Brooklyn, NY 11222（本店は 28 Cumberland St, Fort Greene）","https://hoopsklub.com/services/adult-programs",4,"予約枠：早朝6:00-9:00 / 日中10:00-14:00 / 夜19:00-24:00。要事前予約（GoodRunアプリ または Calendly）","ピックアップラン＝1日パス$30（中〜上級者向け・開催日は変動）。シュートアラウンド$40/時（2名まで、追加1名+$20）。ドロップイン可否は不明なので必ず事前予約を",""],
+    ["2026-12-17",780,855,"NBA Store Fifth Avenue","shop","545 5th Ave, New York, NY 10017","https://store.nba.com/nyc-store/",4,"月-木 10:00-20:00 / 金土 10:00-21:00 / 日 10:00-20:00（第三者情報。公式掲載なしのため要電話確認 +1 212-457-3120）","全チームのグッズ・NBAリテール視察。運営はFanatics",""],
+    ["2026-12-17",900,990,"The Ned NoMad","sight","1170 Broadway, New York, NY 10001","https://www.thened.com/nomad",5,"Cecconi's 水-土 7:00-23:00 / 日-火 7:00-22:00、Little Ned 月-水 17:00-24:00 / 木-土 17:00-02:00","非会員が入れるのは1階 Cecconi's（要予約推奨）と Little Ned。Ned's Club・最上階テラスは会員限定で宿泊者でも不可。今回の完成形モデルとして照明・音・人の配置・客層を見る",""],
+    ["2026-12-17",1050,1170,"PUBLIC Hotel","sight","215 Chrystie St, New York, NY 10002","https://www.publichotels.com/newyork/eat-and-drink",5,"The Roof(18F) 日-水 17:00-02:00 / 木-土 17:00-04:00。ロビー・Louis・Two Fifteen は公式に時間掲載なし","非宿泊者も入場可・予約推奨(SevenRooms)。ドレスコードはスマートカジュアル。昼→夜→ナイトライフへの空間の切り替わりを観察",""],
+    ["2026-12-17",1230,1380,"DJイベント / Artspace","night","215 Chrystie St, New York, NY 10002 ほか","",3,"Artspace(PUBLIC内) 火・金 22:00〜 / 土 22:30〜、Two Fifteen 水-土 22:00〜","木曜は定例が読めないので、ラインナップ確定後に差し替え。軽めのクラブナイト",""],
+    // ---------- 12/18(金) ----------
+    ["2026-12-18",465,525,"Radio Bakery","food","135 India St, Brooklyn, NY 11222","https://www.radiobakery.nyc/",5,"毎日 7:30-15:30（売り切れ次第終了）","開店7:30。ベーカリー×コーヒー×neighborhoodブランドの作り方を見る",""],
+    ["2026-12-18",540,630,"Greenpoint 散歩","sight","Manhattan Ave / Franklin St, Greenpoint, Brooklyn","",4,"","店舗・街・ローカル感を見る。Radio Bakeryから徒歩圏",""],
+    ["2026-12-18",660,735,"The Hoxton Williamsburg","sight","97 Wythe Ave, Brooklyn, NY 11249","https://thehoxton.com/williamsburg/kfar-restaurant/",4,"K'Far ロビーバー 日-水 8:00-23:30 / 木-土 8:00-00:30、カフェ 8:00-15:00。Laser Wolf(屋上) 17:00-（金土は翌1:00）","ロビーの飲食は Klein's から K'Far に変更済み。非宿泊者も利用可・ウォークイン歓迎。ホテル×飲食×ローカルの接続を見る",""],
+    ["2026-12-18",750,810,"Wythe Hotel","sight","80 Wythe Ave, Brooklyn, NY 11249","https://www.wythehotel.com/dining",3,"Le Crocodile 毎日7:00〜（閉店は日-水22:00 / 木-土23:00の参考値）、Bar Blondeau(6F) 月-金 17:00-24:00 / 土 14:00- / 日 13:00-","昼は1階の Le Crocodile。既存建築のリノベーションと高級感の作り方を見る",""],
+    ["2026-12-18",870,990,"Ace Hotel Brooklyn","sight","252 Schermerhorn St, Brooklyn, NY 11217","https://acehotel.com/brooklyn/eat-drink/",5,"ロビーバー 日-木 12:00-24:00 / 金土 12:00-02:00、フード 11:30-22:00、ベーカリー 7:00-14:00","逗子に最も実装しやすいモデル。非宿泊者も可・予約不要のウォークイン。1.5〜2時間滞在して、ラウンジを仕事/会話/音楽に変える仕掛けを見る",""],
+    ["2026-12-18",1020,1125,"Barclays 周辺で軽く食事","food","Atlantic Ave / Flatbush Ave 周辺, Brooklyn","",3,"","Ace Hotelからは徒歩15分ほど。開場18:00なので早めに",""],
+    ["2026-12-18",1170,1320,"Magic @ Nets","sports","Barclays Center, 620 Atlantic Ave, Brooklyn, NY 11217","https://www.barclayscenter.com/events/category/brooklyn-nets",5,"開場18:00（試合開始90分前）","2026-27の公式日程で 12/18(金) 19:30 開始と確認済み",""],
+    ["2026-12-18",1350,1500,"Public Records（本命クラブナイト）","night","233 Butler St, Brooklyn, NY 11217","https://publicrecords.nyc/",5,"月火休 / 水木 18:00-22:00 / 金 18:00-翌4:00 / 土 10:00-翌4:00 / 日 10:00-21:00","金曜は翌4:00まで。飲食・ラウンジ・サウンドシステム・DJの複合モデル。代替案：Elsewhere（599 Johnson Ave, Bushwick／金土は翌4:00まで）、BASEMENT（52-19 Flushing Ave, Maspeth＝Knockdown Center地下／金土テクノ22:30〜）。ラインナップ確定後に差し替え",""],
+    // ---------- 12/19(土) ----------
+    ["2026-12-19",480,570,"Sunday In Brooklyn","food","348 Wythe Ave, Brooklyn, NY 11249","https://www.sundayinbrooklyn.com/",4,"朝食 8:00-9:30 / ブランチ 9:30-16:30 / ディナー 17:00-22:00","neighborhood restaurant の朝業態を見る。朝食メニューは9:30まで",""],
+    ["2026-12-19",600,630,"チェックアウト / 荷物預け","stay","247 Metropolitan Ave, Brooklyn, NY 11211","https://www.thepodhotel.com/pod-bk",4,"チェックアウト12:00まで / 当日中の荷物預かりはフロントで可","この日は宿泊なし。荷物はフロントに預けて身軽に",""],
+    ["2026-12-19",630,780,"ファッション・雑貨・カフェ・ギャラリー巡り","shop","Bedford Ave / Wythe Ave / N 6th St 周辺, Williamsburg","",4,"","最終インプット。12月直前にショップを再選定する",""],
+    ["2026-12-19",780,840,"コーヒー / 予備視察","food","148 Grand St, Brooklyn, NY 11249（Devoción）ほか未訪問店","",3,"Devoción 土日 7:30-18:00","未訪問の店を優先して埋める",""],
+    ["2026-12-19",900,1020,"Pier 2 または Hoops Klub","sports","334 Furman St, Brooklyn, NY 11201（Brooklyn Bridge Park Pier 2）","https://brooklynbridgepark.org/things-to-do/basketball/",3,"10月-4月 8:00-21:00（12月も利用可・無料/先着順）","コートは屋根付きシェッドの下なので冬も使える。リーグのパーミット時間帯は優先利用あり。寒ければ Hoops Klub Greenpoint（237 Russell St）へ",""],
+    ["2026-12-19",1080,1120,"ホテルで荷物回収","move","247 Metropolitan Ave, Brooklyn, NY 11211","",4,"","空港へ向かう準備",""],
+    ["2026-12-19",1125,1245,"最後の夕食 / 一杯","food","Williamsburg, Brooklyn","",3,"","出発前の締め。荷物を持って動くので近場で",""],
+    ["2026-12-19",1260,1340,"空港へ移動（JFK想定）","move","247 Metropolitan Ave → JFK","",5,"","01:20発は3時間前=22:20ターミナル着が目安。JFKなら21:00-21:15にWilliamsburg発（車35〜60分）、EWRなら21:15-21:30発（車40〜60分・$95〜120）。地下鉄利用なら20:30-20:45発・所要80分。受託手荷物の締切は出発60分前(00:20)が一般的なので要確認",""],
+    ["2026-12-19",1520,1550,"✈ JFK → メキシコ（12/20 1:20発）","move","JFK / EWR（確定後に更新）","",5,"","MEX乗継で 5:10着 → 8:25発 → GDL 10:00着",""],
+    // ---------- 12/20(日) Guadalajara 1日目 ----------
+    ["2026-12-20",310,505,"MEX 乗継（メキシコ入国・国内線へ）","move","Aeropuerto Internacional Benito Juárez (MEX), Ciudad de México","",5,"","5:10着 → 8:25発。国際線→国内線は入国審査＋預け荷物の受取/再預けが必要。3時間15分の乗継なので余裕は少ない",""],
+    ["2026-12-20",505,600,"✈ MEX → GDL","move","MEX → Aeropuerto Internacional de Guadalajara (GDL)","",5,"","8:25発 → 10:00着",""],
+    ["2026-12-20",600,675,"GDL到着 → Colonia Americana へ","move","GDL空港 → Colonia Americana, Guadalajara","",4,"","空港から約17-20km・20〜35分。認可タクシー（到着ロビーの公式ブースで前払い）260〜340 MXN／Uber 120〜180 MXN。GDLは空港でのUber乗車が可能。客引きタクシーは使わない",""],
+    ["2026-12-20",675,720,"ホテル荷物預け","stay","Colonia Americana, Guadalajara（Brada Collection Vendôme 想定）","",4,"","チェックイン前なら荷物だけ預けて街へ",""],
+    ["2026-12-20",720,795,"Café palReal","food","C. Lope de Vega 113, Arcos Vallarta, C.P. 44130, Guadalajara","https://www.instagram.com/_palreal_/",5,"月-土 8:00-23:00 / 日 8:00-18:00（別ソースでは毎日8:00-17:30。閉店時刻に食い違いあり）","到着日のブランチに最適。ローカル食×スペシャリティコーヒーの完成度を見る。コールドキッチンは8:00-12:00など時間帯限定メニューあり",""],
+    ["2026-12-20",825,945,"Museo Cabañas","sight","Calle Cabañas 8, Plaza Tapatía, C.P. 44360, Guadalajara","https://museocabanas.jalisco.gob.mx/",5,"火-日 10:00-17:00（月曜休館）","日曜は開館。入場 一般160 MXN。Orozco壁画「El Hombre de Fuego」＋世界遺産建築。GDLの文化軸を掴む",""],
+    ["2026-12-20",990,1080,"Colonia Americana 散策","sight","Av. Chapultepec 周辺, Col. Americana, Guadalajara","",5,"","カフェ・バー・ショップ・住宅建築の密度を見る",""],
+    ["2026-12-20",1080,1170,"Insurgente Tap Room","night","Calle Argentina 16, Col. Americana, C.P. 44160, Guadalajara","https://cervezainsurgente.com/tap-rooms",4,"火-土 16:30-24:00 / 日 13:00-21:00（月曜休み）","日曜は21:00閉店なので早めに。ティファナのクラフトビール直営タップルーム。予約不要",""],
+    ["2026-12-20",1320,1470,"Bar Américas","night","Av. Chapultepec Sur 507, Col. Americana, C.P. 44160, Guadalajara","https://baramericas.com.mx/",3,"水-日 22:00-翌7:00（月・火休み）","日曜も営業。GDLのテクノ/ハウス文化の本命。公式カレンダーかResident Advisorでラインナップを直前確認。カバーチャージは不明",""],
+    // ---------- 12/21(月) テキーラ ----------
+    ["2026-12-21",480,525,"El Terrible Juan Café","food","C. Colonias 440, Col. Americana, C.P. 44160, Guadalajara","http://www.elterriblejuan.com/",4,"月-土 8:00-22:00（日曜休み）","GDLを代表する人気ローカルコーヒー。商品とブランドの見せ方を見る",""],
+    ["2026-12-21",540,1080,"テキーラ蒸留所 ＋ Tequila 街","sight","Tequila, Jalisco（La Fortaleza: Francisco Javier Sauza Mora 567 / El Tequileño: Chiapas 51）","https://tequilafortaleza.com/tour-booking/",5,"La Fortaleza 施設 8:00-17:00（ツアーは完全予約制）／El Tequileño は公式Peekで要予約","★月曜の営業可否が両社とも未確認なので必ず事前予約・確認を。La Fortaleza 約50USD/2時間、人気で数週間前に埋まる。移動：車で約1時間、Tequila Plus のバス（Central Vieja / Terminal Zapopan発・30分毎・片道130 MXN）、または送迎付きツアー（TQM Tours 179USD・6〜7時間／Koyote Tours 2,400 MXN・10:00発19:00頃着）。※Jose Cuervo Express は原則土曜のみ運行のためこの日程では乗れない",""],
+    ["2026-12-21",1200,1320,"Oliveria Cocktail Bar","night","Calle Libertad 1852, Col. Americana, C.P. 44160, Guadalajara","https://www.instagram.com/oliveriacocktailbar/",4,"月-木 18:00-01:00 / 金土 18:00-02:30（日曜は情報なし）","※Mecenas は月曜休みなので、この日は Oliveria。禁酒法時代風の内装、ライシージャ/テキーラ/メスカルのカクテル。疲れていれば1軒だけ",""],
+    // ---------- 12/22(火) 建築・アート ----------
+    ["2026-12-22",510,555,"Metódico Café","food","Calle Progreso 500, Col. Americana, Guadalajara","https://www.instagram.com/metodico____cafe/",4,"営業時間の公開情報なし（Instagram または Googleマップで当日確認）","小規模店のデザインと客層を見る",""],
+    ["2026-12-22",570,645,"Casa ITESO Clavigero","sight","Calle José Guadalupe Zuno 2083, Col. Americana, Guadalajara","https://cultura.iteso.mx/casa-iteso-clavigero",5,"月-金 9:00-19:00 / 土 10:00-14:00（日曜休館）","入場無料。Luis Barragán 初期の住宅建築。小規模ラウンジづくりの素材・庭・導線の参考。大学施設なので年末休暇に入る可能性あり＝要確認",""],
+    ["2026-12-22",660,750,"MUSA（Museo de las Artes UdeG）","sight","Av. Juárez 975, Col. Americana, C.P. 44160, Guadalajara","https://www.musaudg.mx/",4,"火-土 10:00-18:00 / 日 10:00-15:00（月曜休館）","入場無料。国内外の現代アート。Paraninfo の Orozco 壁画も見られる",""],
+    ["2026-12-22",780,855,"Brick Lane / ローカルランチ","food","Col. Americana, Guadalajara","",3,"","若い店の店舗デザイン・メニュー構成を見る",""],
+    ["2026-12-22",870,945,"Oxen Concept Store","shop","Av. Miguel Hidalgo y Costilla 1323, Col. Americana, C.P. 44160, Guadalajara","https://www.instagram.com/oxenconcept/",4,"月-金 11:00-20:00 / 土 11:00-19:00 / 日 11:00-17:00","ローカルブランドと商品の編集を見る",""],
+    ["2026-12-22",960,1050,"Casa Habita","sight","Miguel Lerdo de Tejada 2308, Col. Lafayette, C.P. 44140, Guadalajara","https://www.casahabita.com/en/",5,"テラス 月火 11:00-20:00 / 水-日 10:00-23:00、レストラン 月-金 12:00-23:00","1階レストランとテラスは非宿泊者も利用可（電話 +52 33 3679 2000 で直接予約。OpenTable非加盟）。屋上プールが非宿泊者に開放されているかは不明。デザインホテルの共有空間・屋上・バーのつくりを見る",""],
+    ["2026-12-22",1080,1200,"La Americana Taproom","night","Av. Ignacio L. Vallarta 1020（2階）, Col. Americana, C.P. 44160, Guadalajara","https://www.instagram.com/americanataproom/",3,"火 15:00-22:00（他曜日は不明・掲載が古いため要確認）","※エクセルの「CRAFT Americana」は Chapalita地区（Av. Tepeyac 497）でCol. Americana外。近いのはこちら。ビール×食×若いローカル文化",""],
+    ["2026-12-22",1260,1380,"Mecenas Cocktail Bar","night","Av. de la Paz 2133, Col. Americana, Guadalajara","https://www.mecenasbar.com/",4,"火-木・日 19:00-24:45 / 金土 19:00-01:45（月曜休み）。テラスは13:00から","※Pare de Sufrir は火曜休みなのでこの日は Mecenas。North America's 50 Best Bars 掲載。ウォークイン可だがOpenTableで19:00-20:30の予約枠あり。年末は混雑必至",""],
+    // ---------- 12/23(水) GDL → CDMX ----------
+    ["2026-12-23",435,470,"軽い朝食・コーヒー","food","ホテル周辺, Col. Americana, Guadalajara","",2,"","移動優先で軽く",""],
+    ["2026-12-23",480,530,"GDL空港へ移動","move","Col. Americana → GDL空港","",5,"","20〜35分。国内線は2時間前が目安なので8:00には出発。Uber 120〜180 MXN",""],
+    ["2026-12-23",665,745,"✈ GDL → MEX","move","GDL → Aeropuerto Internacional Benito Juárez (MEX)","",5,"","11:05発 → 12:25着（1h20）",""],
+    ["2026-12-23",745,810,"MEX到着 → Roma Norte へ","move","MEX空港 → Roma Norte, Cuauhtémoc, CDMX","",4,"","約10-13km・通常20〜30分（ラッシュ時45〜60分）。認可タクシー370〜440 MXN／Uber・DiDi 250〜320 MXN。2026年3月からAICMが配車アプリのターミナル内乗車を規制しており、指定ゾーンまで歩く場合あり",""],
+    ["2026-12-23",810,840,"ホテル荷物預け","stay","Roma Norte, Cuauhtémoc, CDMX","",4,"","既訪都市なので定番観光は省略、Roma/Condesaに絞る",""],
+    ["2026-12-23",840,900,"Panadería Rosetta","food","Colima 179, Roma Norte, Cuauhtémoc, C.P. 06700, CDMX","https://elenareygadas.com/en/lugares/panaderia/",5,"月-土 7:00-22:00 / 日 7:30-21:30","予約不可・行列必至。世界観・パン・ブランド・小さい店舗の行列設計を見る。系列：Puebla 242店、Café Nin（Havre 73）、Bella Aurora（Puebla 242）",""],
+    ["2026-12-23",900,945,"Buna（Café Rico）","food","Orizaba 42, Roma Norte, Cuauhtémoc, C.P. 06700, CDMX","https://buna.mx/pages/cafeterias",4,"毎日 8:00-21:00","Plaza Río de Janeiro 近く。コーヒーだけでなくプロダクト・店舗ブランドも参考になる",""],
+    ["2026-12-23",960,1035,"kurimanzutto","sight","Gob. Rafael Rebollar 94, San Miguel Chapultepec, C.P. 11850, CDMX","https://www.kurimanzutto.com/contact",5,"火-木 11:00-18:00 / 金土 11:00-16:00（日月休廊）","入場無料・予約不要。水曜は開廊。展示入替で臨時休廊があるため直前に公式確認を。CDMXの国際的ギャラリーシーンを短時間で濃く見る",""],
+    ["2026-12-23",1050,1155,"Roma Norte concept store 巡り","shop","Colima 184 2階（Fundamentally）／Guanajuato 31（Roma Vintage）ほか, Roma Norte","https://wefundamentally.com/",5,"Fundamentally 月-土 11:00-19:30 / 日 11:00-18:00、Roma Vintage 11:00-20:00","Colima通り／Álvaro Obregón通り／Córdoba通りに密集していて徒歩で回れる。Goodbye Folk、LOBO VINTAGE、ERRE VINTAGE、Carla Fernández なども同エリア",""],
+    ["2026-12-23",1170,1260,"La Roma Brewing","night","Av. Yucatán 84 local L, Roma Norte, C.P. 06700, CDMX","https://laromabrewing.com/",3,"水 12:00-23:00 / 木 12:00-24:00 / 金土 12:00-翌2:00","次の夜に備えて軽め。クラフトビール＋タコス",""],
+    ["2026-12-23",1320,1470,"Departamento","night","Av. Álvaro Obregón 154 2階, Roma Norte, C.P. 06700, CDMX","https://cdmx.guiaoca.mx/es/lugares/departamento/",5,"水-土 19:00-翌3:00（別ソースでは火-土 21:00-翌3:00。水曜営業は一致）","小箱ですぐ満席なのでテーブル事前予約を強く推奨（Tel +52 55 4089 4652）。カバーはイベントにより変動、1人平均500ペソ程度。“部屋”のようなバー＋音楽＝ラウンジ運営の参考",""],
+    // ---------- 12/24(木) CDMX → 帰国 ----------
+    ["2026-12-24",510,600,"LagoAlgo で朝食","food","Lago Mayor, Bosque de Chapultepec II Sección, Miguel Hidalgo, CDMX","https://www.lago-algo.mx/",5,"レストラン 毎日 8:30-19:00（朝食 8:30-12:45）","要予約（OpenTable / Tel 55 5515 9585）。★12/24の特別営業・貸切・早仕舞いの可能性があるので12月初旬に要確認。水辺・1960年代モダン建築・食・現代アートが一体",""],
+    ["2026-12-24",600,660,"LagoAlgo 展示","sight","Lago Mayor, Bosque de Chapultepec II Sección, CDMX","https://www.lago-algo.mx/",5,"ギャラリー 水-日 10:00-18:00（月火休廊）","入場無料。レストランと営業日が違う点に注意。建築と現代アートを連続で見る",""],
+    ["2026-12-24",675,765,"Museo Tamayo","sight","Paseo de la Reforma 51, Bosque de Chapultepec I Sección, C.P. 11580, CDMX","https://www.museotamayo.org/en/visita",5,"通常 火-日 10:00-18:00（最終入館17:30）。★12/24はINBAL系美術館の例年運用で 10:00-14:00 の短縮営業","一般95ペソ、日曜無料。現金かVISA/Mastercardのみ。14:00までに退館する前提で組んでいる",""],
+    ["2026-12-24",795,840,"Museo Jumex","sight","Blvd. Miguel de Cervantes Saavedra 303, Col. Granada, C.P. 11520, CDMX","https://www.fundacionjumex.org/es/visita",4,"通常 火-金 10:00-17:00 / 土 10:00-19:00。★過去年の実績では12/24は 10:00-14:00 の短縮営業","入場無料。David Chipperfield 建築・企画展・ミュージアムショップ。14:00閉館前提のため滞在は短め。間に合わなければ省略してランチへ",""],
+    ["2026-12-24",870,975,"遅めのランチ → ショップ巡り","food","Roma Norte / Condesa, CDMX","",4,"","★12/24（Nochebuena）は午後〜夜に休業・短縮する個人店が多い。開いている店を事前に調べておく",""],
+    ["2026-12-24",990,1030,"ホテルで荷物回収","move","Roma Norte, CDMX","",4,"","夕方の渋滞を考えて早めに動く",""],
+    ["2026-12-24",1035,1125,"MEX空港（T1）へ移動","move","Roma Norte → AICM Terminal 1","",5,"","国際線は3時間前=18:45にT1着が公式基準。通常20〜30分だが12/24夕方は混むので60〜75分を確保。配車はドライバーが減るのでUber Reserve等で事前手配推奨。T1/T2は離れているので航空会社のターミナルを要確認",""],
+    ["2026-12-24",1305,1335,"✈ MEX → NRT（21:45発）","move","AICM Terminal 1, Ciudad de México","",5,"","翌12/25 6:30 成田着",""]
+  ];
+  const events = {};
+  E.forEach((r,i)=>{
+    const id = "s" + (i+1);
+    events[id] = {
+      id, date:r[0], start:r[1], end:r[2], title:r[3], cat:r[4],
+      place:r[5], url:r[6], rating:r[7], hours:r[8], memo:r[9],
+      mapUrl: r[10] || (r[5] ? G(r[3] + " " + r[5]) : ""),
+      updatedAt: Date.now()
+    };
+  });
+  return {
+    meta:{ name:"NY → GDL → CDMX 2026", start:"2026-12-16", end:"2026-12-24", tz:"America/New_York",
+           note:"NY3泊 → グアダラハラ3泊 → メキシコシティ1泊",
+           segments:[
+             { from:"2026-12-16", code:"NY",  label:"New York",     tz:"America/New_York" },
+             { from:"2026-12-20", code:"GDL", label:"Guadalajara",  tz:"America/Mexico_City" },
+             { from:"2026-12-23", code:"MEX", label:"Mexico City",  tz:"America/Mexico_City" }
+           ] },
+    categories: JSON.parse(JSON.stringify(DEFAULT_CATEGORIES)),
+    events, trash:{}
+  };
+}
+
+/* ------------------------- 状態 ------------------------- */
+let state = null;
+let dayIndex = 0;
+let viewMode = "timeline";
+let hiddenCats = new Set();
+let dragging = false;
+let db = null, fbRef = null, applyingRemote = false;
+
+/* ------------------------- ユーティリティ ------------------------- */
+const $ = (s)=>document.querySelector(s);
+const pad = (n)=>String(n).padStart(2,"0");
+const uid = ()=> Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+const esc = (s)=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+function fmtTime(min){
+  let h = Math.floor(min/60), m = min%60;
+  if(h>=24) return "翌"+(h-24)+":"+pad(m);
+  return h+":"+pad(m);
+}
+function fmtTimeFlat(min){ // ics / gcal 用（24h以降は翌日に繰り上げ）
+  return { dayOffset: Math.floor(min/1440), h: Math.floor(min/60)%24, m: min%60 };
+}
+function parseDate(s){ const [y,m,d]=s.split("-").map(Number); return new Date(y,m-1,d); }
+function toKey(dt){ return dt.getFullYear()+"-"+pad(dt.getMonth()+1)+"-"+pad(dt.getDate()); }
+function addDays(s,n){ const d=parseDate(s); d.setDate(d.getDate()+n); return toKey(d); }
+const WD = ["日","月","火","水","木","金","土"];
+function dayLabel(s){ const d=parseDate(s); return (d.getMonth()+1)+"/"+d.getDate(); }
+function wdLabel(s){ return WD[parseDate(s).getDay()]; }
+
+function tripDays(){
+  const out=[]; let c=state.meta.start;
+  const end=state.meta.end;
+  let guard=0;
+  while(guard++<400){ out.push(c); if(c===end) break; if(parseDate(c)>parseDate(end)) break; c=addDays(c,1); }
+  return out.length?out:[state.meta.start];
+}
+/* 都市（区間）とタイムゾーン ------------------------------------ */
+function segments(){
+  const s = (state.meta.segments||[]).slice().sort((a,b)=>a.from.localeCompare(b.from));
+  return s.length ? s : [{from:state.meta.start, code:"", label:"", tz:state.meta.tz||"Asia/Tokyo"}];
+}
+function segOf(date){
+  const s=segments();
+  let cur=s[0];
+  for(const x of s){ if(x.from<=date) cur=x; }
+  return cur;
+}
+function tzOf(date){ return (segOf(date)||{}).tz || state.meta.tz || "Asia/Tokyo"; }
+
+function catOf(id){ return state.categories[id] || state.categories.other || {label:"その他",color:"#4bb37b"}; }
+function eventsOfDay(d){
+  return Object.values(state.events).filter(e=>e.date===d).sort((a,b)=>a.start-b.start||a.end-b.end);
+}
+function durLabel(min){
+  const h=Math.floor(min/60), m=min%60;
+  if(h===0) return m+"分";
+  return h+"時間"+(m?m+"分":"");
+}
+function stars(n){ n=Number(n)||0; return "★".repeat(n)+"☆".repeat(Math.max(0,5-n)); }
+
+/* ------------------------- 保存 / 同期 ------------------------- */
+function saveLocal(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); }catch(e){} }
+
+function setSync(cls, txt){ $("#syncDot").className="dot "+cls; $("#syncTxt").textContent=txt; }
+
+function pushAll(){
+  saveLocal();
+  if(!fbRef) return;
+  applyingRemote = true;
+  fbRef.set(JSON.parse(JSON.stringify(state)))
+    .then(()=>{ setSync("on","同期中"); })
+    .catch(err=>{ setSync("err","同期エラー"); console.warn(err); })
+    .finally(()=>{ setTimeout(()=>applyingRemote=false, 60); });
+}
+function commit(){ pushAll(); render(); }
+
+async function initFirebase(){
+  if(!FIREBASE_CONFIG.databaseURL){ setSync("", "ローカル保存"); return; }
+  setSync("wait","接続中…");
+  try{
+    const appMod = await import("https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js");
+    const dbMod  = await import("https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js");
+    const app = appMod.initializeApp(FIREBASE_CONFIG);
+    db = dbMod.getDatabase(app);
+    const r = dbMod.ref(db, "trips/"+ROOM_ID);
+    fbRef = { set:(v)=>dbMod.set(r,v) };
+    dbMod.onValue(r, (snap)=>{
+      const v = snap.val();
+      if(!v){ pushAll(); setSync("on","同期中"); return; }
+      if(applyingRemote) { setSync("on","同期中"); return; }
+      if(dragging) return;
+      state = normalize(v);
+      saveLocal();
+      setSync("on","同期中");
+      render();
+    }, (err)=>{ setSync("err","同期エラー"); console.warn(err); });
+  }catch(e){
+    console.warn(e); setSync("err","接続失敗（ローカル保存）");
+  }
+}
+
+function normalize(v){
+  v = v || {};
+  v.meta = Object.assign({name:"旅行",start:toKey(new Date()),end:toKey(new Date()),tz:"Asia/Tokyo",note:""}, v.meta||{});
+  if(!Array.isArray(v.meta.segments) || !v.meta.segments.length){
+    v.meta.segments = [{ from:v.meta.start, code:"", label:"", tz:v.meta.tz||"Asia/Tokyo" }];
+  }
+  v.categories = Object.assign({}, DEFAULT_CATEGORIES, v.categories||{});
+  v.events = v.events || {};
+  v.trash  = v.trash  || {};
+  Object.values(v.events).forEach(e=>{ e.rating = Number(e.rating)||0; e.start=Number(e.start); e.end=Number(e.end); });
+  return v;
+}
+
+/* ------------------------- 描画 ------------------------- */
+function render(){
+  if(!state) return;
+  $("#tripName").textContent = state.meta.name || "旅行";
+  const ds = tripDays();
+  if(dayIndex >= ds.length) dayIndex = ds.length-1;
+  if(dayIndex < 0) dayIndex = 0;
+  const sgNow = segOf(ds[dayIndex]);
+  $("#tripRange").textContent =
+    dayLabel(state.meta.start)+"〜"+dayLabel(state.meta.end)
+    + (sgNow && sgNow.label ? " ・ 📍"+sgNow.label : "")
+    + (state.meta.note ? " ・ "+state.meta.note : "");
+  renderTabs(ds); renderLegend(); renderGrid();
+  if(viewMode==="timeline"){ $("#grid").style.display="flex"; $("#listView").style.display="none"; renderEvents(); }
+  else { $("#grid").style.display="none"; $("#listView").style.display="block"; renderList(); }
+}
+
+function renderTabs(ds){
+  const w = $("#tabs"); w.innerHTML="";
+  ds.forEach((d,i)=>{
+    const b=document.createElement("button");
+    b.className="tab"+(i===dayIndex?" active":"");
+    const sg=segOf(d);
+    b.innerHTML = "<b>"+dayLabel(d)+"</b><span>"+wdLabel(d)+(sg&&sg.code?" · "+esc(sg.code):"")+"</span>";
+    b.onclick = ()=>{ dayIndex=i; render(); b.scrollIntoView({inline:"center",block:"nearest",behavior:"smooth"}); };
+    w.appendChild(b);
+  });
+  const active = w.children[dayIndex];
+  if(active) active.scrollIntoView({inline:"center",block:"nearest"});
+}
+
+function renderLegend(){
+  const w = $("#legend"); w.innerHTML="";
+  const bCal=document.createElement("button");
+  bCal.className="act"; bCal.innerHTML="📅 この日をカレンダーへ";
+  bCal.onclick=()=>addDayToCalendar(tripDays()[dayIndex]);
+  w.appendChild(bCal);
+  const bCopy=document.createElement("button");
+  bCopy.className="act sec"; bCopy.innerHTML="📋 コピー";
+  bCopy.onclick=()=>copyText(dayText(tripDays()[dayIndex]));
+  w.appendChild(bCopy);
+  const dv=document.createElement("i"); dv.className="vdiv"; w.appendChild(dv);
+  Object.entries(state.categories).forEach(([k,c])=>{
+    const b=document.createElement("button");
+    b.className="chip"+(hiddenCats.has(k)?" off":"");
+    b.innerHTML = '<i class="sw" style="background:'+c.color+'"></i>'+esc(c.label);
+    b.onclick=()=>{ hiddenCats.has(k)?hiddenCats.delete(k):hiddenCats.add(k); render(); };
+    w.appendChild(b);
+  });
+  const seg=document.createElement("div"); seg.className="seg";
+  seg.innerHTML='<button data-v="timeline">タイムライン</button><button data-v="list">リスト</button>';
+  seg.querySelectorAll("button").forEach(b=>{
+    if(b.dataset.v===viewMode) b.classList.add("on");
+    b.onclick=()=>{ viewMode=b.dataset.v; render(); };
+  });
+  w.appendChild(seg);
+}
+
+function renderGrid(){
+  const g=$("#gutter"), l=$("#lanes");
+  const h = (DAY_END-DAY_START)*PX_PER_MIN;
+  g.style.height = h+"px"; l.style.height = h+"px";
+  if(g.dataset.built) { placeNowLine(); return; }
+  let gh="", lh="";
+  for(let m=DAY_START; m<=DAY_END; m+=30){
+    const top=(m-DAY_START)*PX_PER_MIN;
+    if(m%60===0){
+      gh += '<div class="hlabel" style="top:'+top+'px">'+fmtTime(m)+'</div>';
+      lh += '<div class="hline" style="top:'+top+'px"></div>';
+    } else {
+      lh += '<div class="hline half" style="top:'+top+'px"></div>';
+    }
+  }
+  g.innerHTML=gh; g.dataset.built="1";
+  l.insertAdjacentHTML("afterbegin", lh);
+  l.insertAdjacentHTML("beforeend", '<div class="nowline" id="nowline" style="display:none"></div>');
+  placeNowLine();
+}
+function placeNowLine(){
+  const nl=$("#nowline"); if(!nl) return;
+  const now=new Date(), key=toKey(now), ds=tripDays();
+  const min=now.getHours()*60+now.getMinutes();
+  if(ds[dayIndex]!==key || min<DAY_START || min>DAY_END){ nl.style.display="none"; return; }
+  nl.style.display="block"; nl.style.top = ((min-DAY_START)*PX_PER_MIN)+"px";
+}
+
+function layout(list){
+  const groups=[]; let cur=[], curEnd=-1;
+  list.forEach(e=>{
+    if(cur.length && e.start >= curEnd){ groups.push(cur); cur=[]; curEnd=-1; }
+    cur.push(e); curEnd=Math.max(curEnd, e.end);
+  });
+  if(cur.length) groups.push(cur);
+  groups.forEach(g=>{
+    const cols=[];
+    g.forEach(e=>{
+      let placed=false;
+      for(let i=0;i<cols.length;i++){
+        if(cols[i][cols[i].length-1].end <= e.start){ cols[i].push(e); e._col=i; placed=true; break; }
+      }
+      if(!placed){ cols.push([e]); e._col=cols.length-1; }
+    });
+    g.forEach(e=> e._cols = cols.length);
+  });
+}
+
+function renderEvents(){
+  const layer=$("#evlayer"); layer.innerHTML="";
+  const d = tripDays()[dayIndex];
+  const list = eventsOfDay(d).filter(e=>!hiddenCats.has(e.cat));
+  layout(list);
+  list.forEach(e=>{
+    const el=document.createElement("div");
+    el.className="ev"; el.dataset.id=e.id;
+    styleEvent(el,e);
+    const dur=e.end-e.start;
+    const c=catOf(e.cat);
+    let meta = fmtTime(e.start)+"–"+fmtTime(e.end);
+    if(e.rating) meta += " ・ "+"★".repeat(e.rating);
+    if(e.place) meta += " ・ "+e.place;
+    el.innerHTML =
+      '<span class="t">'+esc(e.title||"(無題)")+'</span>' +
+      (dur>=45 ? '<span class="m">'+esc(meta)+'</span>' : '') +
+      (e.url ? '<button class="lk" data-lk="1">↗</button>' : '') +
+      (dur>=40 ? '<div class="hd" data-hd="1"></div>' : '');
+    if(dur<45) el.classList.add("small");
+    layer.appendChild(el);
+    attachEventGestures(el, e);
+  });
+  placeNowLine();
+}
+function styleEvent(el,e){
+  const c=catOf(e.cat);
+  const top=(e.start-DAY_START)*PX_PER_MIN;
+  const h=Math.max(22,(e.end-e.start)*PX_PER_MIN-2);
+  const cols=e._cols||1, col=e._col||0;
+  const wpc=100/cols;
+  el.style.top=top+"px"; el.style.height=h+"px";
+  el.style.left="calc("+(wpc*col)+"% + 4px)";
+  el.style.width="calc("+wpc+"% - 8px)";
+  el.style.background=c.color;
+}
+
+function renderList(){
+  const d=tripDays()[dayIndex];
+  const list=eventsOfDay(d).filter(e=>!hiddenCats.has(e.cat));
+  const w=$("#listView");
+  if(!list.length){ w.innerHTML='<div class="empty">この日の予定はまだありません</div>'; return; }
+  w.innerHTML = list.map(e=>{
+    const c=catOf(e.cat);
+    const mapUrl = e.mapUrl || (e.place? "https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(e.title+" "+e.place):"");
+    return '<div class="card" style="border-left-color:'+c.color+'" data-id="'+e.id+'">'+
+      '<div class="top"><span class="time">'+fmtTime(e.start)+'–'+fmtTime(e.end)+'</span>'+
+      '<span class="name">'+esc(e.title)+'</span>'+
+      '<span class="catpill" style="background:'+c.color+'">'+esc(c.label)+'</span></div>'+
+      '<div class="meta">'+
+        (e.rating? '<div class="stars">'+stars(e.rating)+'</div>':'')+
+        (e.place? '<div>📍 '+esc(e.place)+(mapUrl?' ・ <a href="'+esc(mapUrl)+'" target="_blank" rel="noopener">地図</a>':'')+'</div>':'')+
+        (e.hours? '<div>🕒 '+esc(e.hours)+'</div>':'')+
+        (e.url? '<div>🔗 <a href="'+esc(e.url)+'" target="_blank" rel="noopener">'+esc(e.url)+'</a></div>':'')+
+        (e.memo? '<div>📝 '+esc(e.memo)+'</div>':'')+
+      '</div></div>';
+  }).join("");
+  w.querySelectorAll(".card").forEach(card=>{
+    card.addEventListener("click",(ev)=>{ if(ev.target.tagName==="A") return; openDetail(state.events[card.dataset.id]); });
+  });
+}
+
+/* ------------------------- タッチ操作（長押しドラッグ / リサイズ） ------------------------- */
+let lastTouch=0;
+document.addEventListener("touchstart",()=>{ lastTouch=Date.now(); },{passive:true,capture:true});
+
+function attachEventGestures(el, e){
+  let t0=0, y0=0, x0=0, mode=null, timer=null, startMin=0, endMin=0, moved=false, scrollTop0=0;
+  const badge=$("#badge");
+
+  const clear=()=>{ clearTimeout(timer); timer=null; };
+  const finish=()=>{
+    clear();
+    if(mode){
+      el.classList.remove("dragging","picked");
+      badge.style.display="none";
+      const ev = state.events[e.id];
+      if(ev && (ev.start!==startMin || ev.end!==endMin)){ ev.updatedAt=Date.now(); }
+      dragging=false;
+      suppressClickUntil=Date.now()+450;
+      commit();
+    }
+    mode=null;
+  };
+
+  el.addEventListener("touchstart",(t)=>{
+    if(t.touches.length>1) return;
+    t0=Date.now(); y0=t.touches[0].clientY; x0=t.touches[0].clientX; moved=false;
+    startMin=e.start; endMin=e.end;
+    scrollTop0=$("#scroller").scrollTop;
+    if(t.target.closest("[data-lk]")) return;   // リンクボタンはタップのみ
+    if(t.target.closest("[data-hd]")){
+      // 下端 → 即リサイズ
+      t.preventDefault();
+      mode="resize"; dragging=true; el.classList.add("dragging");
+      showBadge(t.touches[0]); return;
+    }
+    timer=setTimeout(()=>{
+      mode="move"; dragging=true; el.classList.add("dragging","picked");
+      if(navigator.vibrate) navigator.vibrate(12);
+      showBadge({clientX:x0, clientY:y0});
+    },420);
+  },{passive:false});
+
+  function applyMove(tx,ty){
+    const scrollDelta = $("#scroller").scrollTop - scrollTop0;
+    const dy = (ty - y0 + scrollDelta)/PX_PER_MIN;
+    const ev = state.events[e.id]; if(!ev) return;
+    if(mode==="move"){
+      let ns = startMin + Math.round(dy/SNAP)*SNAP;
+      const dur = endMin-startMin;
+      ns = Math.max(DAY_START, Math.min(DAY_END-dur, ns));
+      ev.start=ns; ev.end=ns+dur;
+    } else {
+      let ne = endMin + Math.round(dy/SNAP)*SNAP;
+      ne = Math.max(ev.start+SNAP, Math.min(DAY_END, ne));
+      ev.end=ne;
+    }
+    e.start=ev.start; e.end=ev.end;
+    styleEvent(el,e);
+    const m=el.querySelector(".m");
+    if(m) m.textContent = fmtTime(ev.start)+"–"+fmtTime(ev.end)+(ev.place?" ・ "+ev.place:"");
+    badge.textContent = fmtTime(ev.start)+" – "+fmtTime(ev.end);
+    badge.style.left = Math.min(window.innerWidth-120, Math.max(8, tx-56))+"px";
+    badge.style.top  = Math.max(8, ty-52)+"px";
+    autoScroll(ty);
+  }
+
+  el.addEventListener("touchmove",(t)=>{
+    const ty=t.touches[0].clientY, tx=t.touches[0].clientX;
+    if(!mode){
+      if(Math.abs(ty-y0)>8 || Math.abs(tx-x0)>8){ moved=true; clear(); }
+      return;
+    }
+    t.preventDefault();
+    applyMove(tx,ty);
+  },{passive:false});
+
+  el.addEventListener("touchend",(t)=>{
+    const quick = Date.now()-t0 < 420 && !moved && !mode;
+    finish();
+    if(quick){
+      const lk = t.target.closest("[data-lk]");
+      if(lk){ const u=state.events[e.id].url; if(u) window.open(u,"_blank","noopener"); return; }
+      openDetail(state.events[e.id]);
+    }
+  });
+  el.addEventListener("touchcancel", finish);
+
+  /* デスクトップ用（マウス）：長押し(0.3秒)ドラッグで移動、下端ドラッグで長さ変更 */
+  el.addEventListener("mousedown",(ev)=>{
+    if(ev.button!==0) return;
+    if(Date.now()-lastTouch < 1200) return;          // タッチ端末のエミュレートmouseは無視
+    if(ev.target.closest("[data-lk]")) return;
+    t0=Date.now(); x0=ev.clientX; y0=ev.clientY; moved=false;
+    startMin=e.start; endMin=e.end; scrollTop0=$("#scroller").scrollTop;
+    const onHd = !!ev.target.closest("[data-hd]");
+    if(onHd){ ev.preventDefault(); mode="resize"; dragging=true; el.classList.add("dragging"); showBadge(ev); }
+    else timer=setTimeout(()=>{ mode="move"; dragging=true; el.classList.add("dragging","picked"); showBadge({clientX:x0,clientY:y0}); },300);
+    const mm=(e2)=>{
+      if(!mode){ if(Math.abs(e2.clientY-y0)>6||Math.abs(e2.clientX-x0)>6){ moved=true; clear(); } return; }
+      e2.preventDefault(); applyMove(e2.clientX, e2.clientY);
+    };
+    const mu=()=>{
+      document.removeEventListener("mousemove",mm); document.removeEventListener("mouseup",mu);
+      const quick = !mode && !moved;
+      finish();
+      if(quick) openDetail(state.events[e.id]);
+    };
+    document.addEventListener("mousemove",mm); document.addEventListener("mouseup",mu);
+  });
+  el.addEventListener("click",(ev)=>{
+    const lk=ev.target.closest("[data-lk]");
+    if(lk){ const u=state.events[e.id].url; if(u) window.open(u,"_blank","noopener"); }
+  });
+
+  function showBadge(pt){
+    badge.style.display="block";
+    badge.textContent = fmtTime(e.start)+" – "+fmtTime(e.end);
+    badge.style.left = Math.min(window.innerWidth-120, Math.max(8, pt.clientX-56))+"px";
+    badge.style.top  = Math.max(8, pt.clientY-52)+"px";
+  }
+}
+let asRaf=null;
+function autoScroll(clientY){
+  const sc=$("#scroller"), r=sc.getBoundingClientRect();
+  let d=0;
+  if(clientY < r.top+70) d = -Math.min(14,(r.top+70-clientY)/4);
+  else if(clientY > r.bottom-90) d = Math.min(14,(clientY-(r.bottom-90))/4);
+  if(asRaf) cancelAnimationFrame(asRaf);
+  if(d!==0 && dragging){ sc.scrollTop += d; asRaf=requestAnimationFrame(()=>autoScroll(clientY)); }
+}
+
+/* 空き時間タップ → 追加 */
+$("#lanes").addEventListener("click",(ev)=>{
+  if(dragging || Date.now()<suppressClickUntil) return;
+  if(ev.target.closest(".ev")) return;
+  const r=$("#evlayer").getBoundingClientRect();
+  const min = DAY_START + Math.floor(((ev.clientY-r.top)/PX_PER_MIN)/SNAP)*SNAP;
+  openEditor(null, Math.max(DAY_START, Math.min(DAY_END-60, min)));
+});
+
+/* 横スワイプで日移動 */
+(function(){
+  const sc=$("#scroller"); let sx=0,sy=0,act=false;
+  sc.addEventListener("touchstart",(t)=>{ if(t.touches.length>1){act=false;return;} sx=t.touches[0].clientX; sy=t.touches[0].clientY; act=true; },{passive:true});
+  sc.addEventListener("touchend",(t)=>{
+    if(!act||dragging) return; act=false;
+    const dx=t.changedTouches[0].clientX-sx, dy=t.changedTouches[0].clientY-sy;
+    if(Math.abs(dx)>60 && Math.abs(dx)>Math.abs(dy)*1.6){
+      const ds=tripDays();
+      const ni = dayIndex + (dx<0?1:-1);
+      if(ni>=0 && ni<ds.length){ dayIndex=ni; render(); }
+    }
+  },{passive:true});
+})();
+
+/* ------------------------- シート制御 ------------------------- */
+let openSheets=[];
+let suppressClickUntil=0;
+function openSheet(id){
+  const s=$(id), m=$("#mask");
+  m.classList.add("on"); s.classList.add("on");
+  /* タップ直後に発生する“ゴーストクリック”がシート／マスクに当たって
+     すぐ閉じてしまうのを防ぐ（iOS/Android実機で起きる） */
+  s.style.pointerEvents="none"; m.style.pointerEvents="none";
+  clearTimeout(openSheet._t);
+  openSheet._t=setTimeout(()=>{ s.style.pointerEvents=""; m.style.pointerEvents=""; },380);
+  if(!openSheets.includes(id)) openSheets.push(id);
+}
+function closeSheets(){
+  openSheets.forEach(id=>$(id).classList.remove("on"));
+  openSheets=[]; $("#mask").classList.remove("on");
+}
+$("#mask").addEventListener("click", closeSheets);
+
+/* ------------------------- 詳細 ------------------------- */
+let currentId=null;
+function openDetail(e){
+  if(!e) return;
+  currentId=e.id;
+  const c=catOf(e.cat);
+  const mapUrl = e.mapUrl || (e.place? "https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(e.title+" "+e.place):"");
+  const rows = [
+    ["時間", fmtTime(e.start)+" – "+fmtTime(e.end)+" <span style='color:var(--sub)'>（"+durLabel(e.end-e.start)+"）</span>"],
+    ["カテゴリ", '<span class="catpill" style="background:'+c.color+'">'+esc(c.label)+'</span>'],
+    ["おすすめ度", e.rating? '<span class="stars">'+stars(e.rating)+'</span>' : '<span style="color:var(--sub)">未設定</span>'],
+    ["住所・場所", e.place? esc(e.place) : '<span style="color:var(--sub)">未設定</span>'],
+    ["地図", mapUrl? '<a href="'+esc(mapUrl)+'" target="_blank" rel="noopener">Googleマップで開く ↗</a>' : '<span style="color:var(--sub)">—</span>'],
+    ["営業時間", e.hours? esc(e.hours) : '<span style="color:var(--sub)">未設定</span>'],
+    ["URL", e.url? '<a href="'+esc(e.url)+'" target="_blank" rel="noopener">'+esc(e.url)+' ↗</a>' : '<span style="color:var(--sub)">—</span>'],
+    ["メモ", e.memo? esc(e.memo).replace(/\n/g,"<br>") : '<span style="color:var(--sub)">—</span>']
+  ];
+  $("#detailBody").innerHTML =
+    '<div class="dtitle">'+esc(e.title)+'</div>'+
+    '<div class="mini">'+dayLabel(e.date)+"("+wdLabel(e.date)+")"+'</div>'+
+    rows.map(r=>'<div class="drow"><div class="k">'+r[0]+'</div><div class="v">'+r[1]+'</div></div>').join("")+
+    '<div class="btns" style="margin-top:14px"><button class="btn pri" id="dEdit">編集</button><button class="btn dan" id="dDel">削除</button></div>'+
+    '<div class="mini" style="margin-top:12px">カレンダーへの追加は、上部の「📅 この日をカレンダーへ」から1日分まとめて行えます。</div>';
+  $("#dEdit").onclick=()=>{ closeSheets(); setTimeout(()=>openEditor(state.events[currentId]),180); };
+  $("#dDel").onclick=()=>{ closeSheets(); removeEvent(currentId); };
+  openSheet("#sheetDetail");
+}
+
+/* ------------------------- 追加・編集 ------------------------- */
+function timeOptions(sel){
+  let o="";
+  for(let m=DAY_START;m<=DAY_END;m+=15){ o+='<option value="'+m+'"'+(m===sel?" selected":"")+'>'+fmtTime(m)+'</option>'; }
+  return o;
+}
+function openEditor(e, presetStart){
+  const isNew = !e;
+  const ds=tripDays();
+  const ev = e ? Object.assign({},e) : {
+    id:uid(), date:ds[dayIndex], start:presetStart!=null?presetStart:600, end:(presetStart!=null?presetStart:600)+60,
+    title:"", cat:"sight", place:"", mapUrl:"", url:"", hours:"", memo:"", rating:0
+  };
+  $("#editBody").innerHTML =
+    '<h2>'+(isNew?"予定を追加":"予定を編集")+'</h2>'+
+    '<div class="field"><label>タイトル</label><input id="fTitle" placeholder="例：Apollo Bagels" value="'+esc(ev.title)+'"></div>'+
+    '<div class="field"><label>カテゴリ</label><div class="cats" id="fCats"></div></div>'+
+    '<div class="field"><label>日付</label><select id="fDate">'+ds.map(d=>'<option value="'+d+'"'+(d===ev.date?" selected":"")+'>'+dayLabel(d)+"("+wdLabel(d)+")"+'</option>').join("")+'</select></div>'+
+    '<div class="row2"><div class="field"><label>開始</label><select id="fStart">'+timeOptions(ev.start)+'</select></div>'+
+    '<div class="field"><label>終了</label><select id="fEnd">'+timeOptions(ev.end)+'</select></div></div>'+
+    '<div class="field"><label>おすすめ度</label><div class="starpick" id="fStars">'+[1,2,3,4,5].map(i=>'<span data-v="'+i+'">★</span>').join("")+'</div></div>'+
+    '<div class="field"><label>場所・住所</label><input id="fPlace" placeholder="例：620 Atlantic Ave, Brooklyn" value="'+esc(ev.place)+'"></div>'+
+    '<div class="field"><label>GoogleマップURL（空欄なら店名＋場所で自動生成）</label><input id="fMap" placeholder="https://maps.app.goo.gl/..." value="'+esc(ev.mapUrl)+'"></div>'+
+    '<div class="field"><label>営業時間</label><input id="fHours" placeholder="例：7:00–15:00（月休）" value="'+esc(ev.hours)+'"></div>'+
+    '<div class="field"><label>URL（公式・食べログなど）</label><input id="fUrl" placeholder="https://" value="'+esc(ev.url)+'"></div>'+
+    '<div class="field"><label>一言メモ</label><textarea id="fMemo" placeholder="見るべきポイント・注意点など">'+esc(ev.memo)+'</textarea></div>'+
+    '<div class="btns"><button class="btn" id="fCancel">キャンセル</button><button class="btn pri" id="fSave">保存</button></div>'+
+    (isNew?"":'<div class="btns"><button class="btn dan sm" id="fDel">この予定を削除</button></div>');
+
+  const cw=$("#fCats"); let curCat=ev.cat;
+  Object.entries(state.categories).forEach(([k,c])=>{
+    const b=document.createElement("button");
+    b.textContent=c.label; b.dataset.k=k;
+    if(k===curCat){ b.classList.add("on"); b.style.background=c.color; }
+    b.onclick=()=>{ curCat=k; cw.querySelectorAll("button").forEach(x=>{x.classList.remove("on");x.style.background="";});
+      b.classList.add("on"); b.style.background=c.color; };
+    cw.appendChild(b);
+  });
+  let curRating=ev.rating||0;
+  const paint=()=>$("#fStars").querySelectorAll("span").forEach(s=>s.classList.toggle("on", Number(s.dataset.v)<=curRating));
+  $("#fStars").querySelectorAll("span").forEach(s=>{
+    s.onclick=()=>{ curRating = (curRating===Number(s.dataset.v))?0:Number(s.dataset.v); paint(); };
+  });
+  paint();
+  $("#fStart").onchange=()=>{
+    const s=Number($("#fStart").value), en=Number($("#fEnd").value);
+    if(en<=s){ $("#fEnd").value = Math.min(DAY_END, s+60); }
+  };
+  $("#fCancel").onclick=closeSheets;
+  if($("#fDel")) $("#fDel").onclick=()=>{ closeSheets(); removeEvent(ev.id); };
+  $("#fSave").onclick=()=>{
+    const s=Number($("#fStart").value); let en=Number($("#fEnd").value);
+    if(en<=s) en=Math.min(DAY_END,s+30);
+    const place=$("#fPlace").value.trim(), title=$("#fTitle").value.trim()||"(無題)";
+    let map=$("#fMap").value.trim();
+    if(!map && place) map = "https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(title+" "+place);
+    state.events[ev.id] = {
+      id:ev.id, date:$("#fDate").value, start:s, end:en, title, cat:curCat,
+      place, mapUrl:map, hours:$("#fHours").value.trim(), url:$("#fUrl").value.trim(),
+      memo:$("#fMemo").value, rating:curRating, updatedAt:Date.now()
+    };
+    dayIndex = tripDays().indexOf($("#fDate").value);
+    if(dayIndex<0) dayIndex=0;
+    closeSheets(); commit(); toast(isNew?"予定を追加しました":"予定を更新しました");
+  };
+  openSheet("#sheetEdit");
+}
+
+function removeEvent(id){
+  const e=state.events[id]; if(!e) return;
+  delete state.events[id];
+  e.deletedAt=Date.now();
+  state.trash[id]=e;
+  commit();
+  toast("「"+(e.title||"予定")+"」を削除しました", "元に戻す", ()=>restore(id));
+}
+function restore(id){
+  const e=state.trash[id]; if(!e) return;
+  delete state.trash[id]; delete e.deletedAt;
+  state.events[id]=e; commit(); toast("復元しました");
+}
+
+/* ------------------------- トースト ------------------------- */
+let toastTimer=null;
+function toast(msg, btnLabel, cb){
+  const t=$("#toast"), b=$("#toastBtn");
+  $("#toastMsg").textContent=msg;
+  if(btnLabel){ b.style.display="block"; b.textContent=btnLabel; b.onclick=()=>{ cb&&cb(); t.classList.remove("on"); }; }
+  else b.style.display="none";
+  t.classList.add("on");
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove("on"), btnLabel?7000:2600);
+}
+
+/* ------------------------- テキストコピー（LINE共有） ------------------------- */
+function dayText(d){
+  const list=eventsOfDay(d);
+  let out = "【"+(state.meta.name||"旅行")+"】"+dayLabel(d)+"("+wdLabel(d)+")\n";
+  if(!list.length) return out+"（予定なし）";
+  list.forEach(e=>{
+    out += "\n"+fmtTime(e.start)+"–"+fmtTime(e.end)+"　"+e.title;
+    if(e.rating) out += "（"+"★".repeat(e.rating)+"）";
+    if(e.place) out += "\n📍"+e.place;
+    if(e.hours) out += "\n🕒"+e.hours;
+    if(e.url)   out += "\n🔗"+e.url;
+    if(e.memo)  out += "\n📝"+e.memo.replace(/\n/g," ");
+    out += "\n";
+  });
+  return out.trim();
+}
+function copyText(txt){
+  const done=()=>toast("コピーしました");
+  if(navigator.clipboard && window.isSecureContext){
+    navigator.clipboard.writeText(txt).then(done, ()=>fallback());
+  } else fallback();
+  function fallback(){
+    const ta=document.createElement("textarea");
+    ta.value=txt; ta.style.position="fixed"; ta.style.opacity="0";
+    document.body.appendChild(ta); ta.select();
+    try{ document.execCommand("copy"); done(); }catch(e){ toast("コピーできませんでした"); }
+    document.body.removeChild(ta);
+  }
+}
+
+/* ------------------------- Googleカレンダー連携 ------------------------- */
+function tzOffsetMin(date, tz){
+  const dtf=new Intl.DateTimeFormat("en-US",{timeZone:tz,hour12:false,year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit"});
+  const p={}; dtf.formatToParts(date).forEach(x=>p[x.type]=x.value);
+  const asUTC=Date.UTC(+p.year, p.month-1, +p.day, p.hour==="24"?0:+p.hour, +p.minute, +p.second);
+  return (asUTC - date.getTime())/60000;
+}
+function zonedToUTC(dateStr, min, tz){
+  const [y,mo,d]=dateStr.split("-").map(Number);
+  const h=Math.floor(min/60), mi=min%60;
+  const guess=Date.UTC(y,mo-1,d,h,mi);
+  let off=tzOffsetMin(new Date(guess),tz);
+  let ts=guess-off*60000;
+  off=tzOffsetMin(new Date(ts),tz);
+  return new Date(guess-off*60000);
+}
+const z=(n)=>String(n).padStart(2,"0");
+function utcStamp(dt){
+  return dt.getUTCFullYear()+z(dt.getUTCMonth()+1)+z(dt.getUTCDate())+"T"+z(dt.getUTCHours())+z(dt.getUTCMinutes())+"00Z";
+}
+function localStamp(dateStr,min){
+  const off=Math.floor(min/1440);
+  const d=addDays(dateStr,off).replace(/-/g,"");
+  const h=Math.floor(min/60)%24, mi=min%60;
+  return d+"T"+z(h)+z(mi)+"00";
+}
+function gcalUrl(e){
+  const tz=tzOf(e.date);
+  const details=[e.memo, e.hours?("営業時間: "+e.hours):"", e.rating?("おすすめ度: "+"★".repeat(e.rating)):"", e.url, e.mapUrl]
+    .filter(Boolean).join("\n");
+  const p=new URLSearchParams({
+    action:"TEMPLATE",
+    text:(e.title||"予定"),
+    dates: localStamp(e.date,e.start)+"/"+localStamp(e.date,e.end),
+    ctz: tz,
+    details: details,
+    location: e.place||""
+  });
+  return "https://calendar.google.com/calendar/render?"+p.toString();
+}
+/* 1日分をまとめてカレンダーへ（.ics を共有 or ダウンロード） */
+async function addDayToCalendar(d){
+  const list = eventsOfDay(d);
+  if(!list.length){ toast("この日の予定がありません"); return; }
+  const name = (state.meta.name||"trip").replace(/[\\/:*?"<>|]/g,"_") + "_" + d;
+  const file = new File([buildICS(list)], name+".ics", {type:"text/calendar"});
+  if(navigator.canShare && navigator.canShare({files:[file]})){
+    try{
+      await navigator.share({files:[file], title:dayLabel(d)+"("+wdLabel(d)+")の予定"});
+      return;                       // 共有シートから「カレンダーに追加」を選べる
+    }catch(err){ if(err && err.name==="AbortError") return; }
+  }
+  downloadICS(list, name);
+}
+async function addAllToCalendar(){
+  const list = Object.values(state.events).sort((a,b)=>a.date.localeCompare(b.date)||a.start-b.start);
+  if(!list.length){ toast("予定がありません"); return; }
+  const name = (state.meta.name||"trip").replace(/[\\/:*?"<>|]/g,"_");
+  const file = new File([buildICS(list)], name+".ics", {type:"text/calendar"});
+  if(navigator.canShare && navigator.canShare({files:[file]})){
+    try{ await navigator.share({files:[file], title:(state.meta.name||"旅行")+" 全日程"}); return; }
+    catch(err){ if(err && err.name==="AbortError") return; }
+  }
+  downloadICS(list, name);
+}
+
+function icsEscape(s){ return String(s||"").replace(/\\/g,"\\\\").replace(/;/g,"\\;").replace(/,/g,"\\,").replace(/\n/g,"\\n"); }
+function buildICS(events){
+  const now=utcStamp(new Date());
+  let s="BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//TripPlanner//JP\r\nCALSCALE:GREGORIAN\r\nMETHOD:PUBLISH\r\n";
+  s+="X-WR-CALNAME:"+icsEscape(state.meta.name||"旅行")+"\r\n";
+  events.forEach(e=>{
+    const c=catOf(e.cat);
+    const tz=tzOf(e.date);
+    const desc=[e.memo, e.hours?("営業時間: "+e.hours):"", e.rating?("おすすめ度: "+"★".repeat(e.rating)):"",
+                "カテゴリ: "+c.label, e.url, e.mapUrl].filter(Boolean).join("\n");
+    s+="BEGIN:VEVENT\r\n";
+    s+="UID:"+e.id+"@tripplanner\r\n";
+    s+="DTSTAMP:"+now+"\r\n";
+    s+="DTSTART:"+utcStamp(zonedToUTC(e.date,e.start,tz))+"\r\n";
+    s+="DTEND:"+utcStamp(zonedToUTC(e.date,e.end,tz))+"\r\n";
+    s+="SUMMARY:"+icsEscape(e.title)+"\r\n";
+    if(e.place) s+="LOCATION:"+icsEscape(e.place)+"\r\n";
+    s+="DESCRIPTION:"+icsEscape(desc)+"\r\n";
+    s+="END:VEVENT\r\n";
+  });
+  return s+"END:VCALENDAR\r\n";
+}
+function downloadICS(events, name){
+  const blob=new Blob([buildICS(events)],{type:"text/calendar;charset=utf-8"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob); a.download=name+".ics";
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 500);
+  toast("ics を書き出しました");
+}
+
+/* ------------------------- メニュー / 設定 ------------------------- */
+function openMenu(){
+  const d=tripDays()[dayIndex];
+  const trash=Object.values(state.trash||{}).sort((a,b)=>(b.deletedAt||0)-(a.deletedAt||0));
+  $("#menuBody").innerHTML =
+    '<h2>メニュー</h2>'+
+    '<div class="btns"><button class="btn" id="mCopy">📋 この日をコピー</button><button class="btn" id="mCopyAll">📋 全日程をコピー</button></div>'+
+    '<div class="btns"><button class="btn pri" id="mIcsDay">📅 この日をカレンダーへ</button><button class="btn" id="mIcsAll">📅 全日程をカレンダーへ</button></div>'+
+    '<div class="hint">1日分（または全日程）を .ics にまとめて出します。<br>・iPhone / Android：共有シートが開くので「カレンダー」を選ぶとまとめて追加できます<br>・PC：ファイルが保存されるので、Googleカレンダー → 設定 →「インポート」で取り込みます<br>時刻は下の「都市・タイムゾーン」設定で都市ごとに変換されます（この日：'+esc(tzOf(d))+'）。</div>'+
+
+    '<h2 style="margin-top:18px">旅行の設定</h2>'+
+    '<div class="field"><label>旅行名</label><input id="mName" value="'+esc(state.meta.name)+'"></div>'+
+    '<div class="field"><label>サブタイトル</label><input id="mNote" value="'+esc(state.meta.note||"")+'"></div>'+
+    '<div class="row2"><div class="field"><label>開始日</label><input type="date" id="mStart" value="'+state.meta.start+'"></div>'+
+    '<div class="field"><label>終了日</label><input type="date" id="mEnd" value="'+state.meta.end+'"></div></div>'+
+    '<div class="btns"><button class="btn pri" id="mSave">設定を保存</button></div>'+
+
+    '<h2 style="margin-top:18px">都市・タイムゾーン</h2>'+
+    '<div class="hint">滞在都市ごとに開始日とタイムゾーンを設定します。カレンダー書き出しの時刻はこの設定で変換されるので、時差のある複数都市でも正しい時間で登録されます。</div>'+
+    '<div id="mSegs"></div>'+
+    '<div class="btns"><button class="btn sm" id="mAddSeg">＋ 都市を追加</button></div>'+
+
+    '<h2 style="margin-top:18px">カテゴリ</h2><div id="mCats"></div>'+
+    '<div class="btns"><button class="btn sm" id="mAddCat">＋ カテゴリを追加</button></div>'+
+
+    '<h2 style="margin-top:18px">共有</h2>'+
+    '<div class="field"><label>共有ルームID（同じIDなら同じ旅程を見られます）</label><input id="mRoom" value="'+esc(ROOM_ID)+'"></div>'+
+    '<div class="btns"><button class="btn sm" id="mRoomGo">ルームを切替</button><button class="btn sm" id="mShare">共有URLをコピー</button></div>'+
+    '<div class="hint">同期状態：'+(FIREBASE_CONFIG.databaseURL? "Firebase 設定済み（リアルタイム同期）":"未設定 → この端末のみ保存（localStorage）。ファイル冒頭の FIREBASE_CONFIG を埋めると家族と同期されます。")+'</div>'+
+
+    '<h2 style="margin-top:18px">ゴミ箱（'+trash.length+'）</h2>'+
+    (trash.length? trash.map(e=>'<div class="trashitem"><div class="ti"><b>'+esc(e.title)+'</b><span>'+dayLabel(e.date)+" "+fmtTime(e.start)+'–'+fmtTime(e.end)+'</span></div><button class="btn sm" style="flex:0 0 auto;padding:8px 14px" data-restore="'+e.id+'">復元</button></div>').join("")
+      : '<div class="hint">削除した予定はここに入ります。</div>')+
+
+    '<h2 style="margin-top:18px">データ</h2>'+
+    '<div class="btns"><button class="btn sm" id="mExport">JSON書き出し</button><button class="btn sm" id="mImport">JSON読み込み</button></div>'+
+    '<div class="btns"><button class="btn sm dan" id="mReset">サンプルに戻す</button></div>'+
+    '<div style="height:10px"></div>';
+
+  $("#mCopy").onclick=()=>copyText(dayText(d));
+  $("#mCopyAll").onclick=()=>copyText(tripDays().map(dayText).join("\n\n──────────\n\n"));
+  $("#mIcsDay").onclick=()=>addDayToCalendar(d);
+  $("#mIcsAll").onclick=()=>addAllToCalendar();
+  $("#mSave").onclick=()=>{
+    state.meta.name=$("#mName").value.trim()||"旅行";
+    state.meta.note=$("#mNote").value.trim();
+    state.meta.start=$("#mStart").value; state.meta.end=$("#mEnd").value;
+    if(parseDate(state.meta.end)<parseDate(state.meta.start)) state.meta.end=state.meta.start;
+    dayIndex=0; closeSheets(); commit(); toast("保存しました");
+  };
+  /* 都市・タイムゾーン */
+  const TZS=["Asia/Tokyo","America/New_York","America/Chicago","America/Denver","America/Los_Angeles","America/Mexico_City","America/Cancun","America/Sao_Paulo","Europe/London","Europe/Paris","Europe/Madrid","Asia/Seoul","Asia/Taipei","Asia/Shanghai","Asia/Bangkok","Asia/Singapore","Asia/Dubai","Australia/Sydney","Pacific/Honolulu"];
+  const sw=$("#mSegs");
+  segments().forEach((sg,i)=>{
+    const row=document.createElement("div");
+    row.className="catedit"; row.style.flexWrap="wrap";
+    row.innerHTML=
+      '<input type="date" value="'+sg.from+'" style="flex:0 0 130px;background:#fff;border:1px solid var(--line2);border-radius:8px;padding:7px">'+
+      '<input type="text" value="'+esc(sg.label||"")+'" placeholder="都市名" style="flex:1 1 90px">'+
+      '<input type="text" value="'+esc(sg.code||"")+'" placeholder="略称" style="flex:0 0 62px">'+
+      (segments().length>1?'<button class="btn sm dan" style="flex:0 0 auto;padding:8px 10px">削除</button>':'')+
+      '<select style="flex:1 1 100%;background:#fff;border:1px solid var(--line2);border-radius:8px;padding:7px;margin-top:4px">'+
+        TZS.map(t=>'<option'+(t===sg.tz?" selected":"")+'>'+t+'</option>').join("")+'</select>';
+    const ins=row.querySelectorAll("input"), sel=row.querySelector("select"), del=row.querySelector("button");
+    const apply=()=>{
+      const list=segments();
+      list[i]={from:ins[0].value||state.meta.start, label:ins[1].value.trim(), code:ins[2].value.trim(), tz:sel.value};
+      state.meta.segments=list; state.meta.tz=list[0].tz; commit();
+    };
+    ins.forEach(x=>x.onchange=apply); sel.onchange=apply;
+    if(del) del.onclick=()=>{ const list=segments(); list.splice(i,1); state.meta.segments=list; commit(); openMenu(); };
+    sw.appendChild(row);
+  });
+  $("#mAddSeg").onclick=()=>{
+    const list=segments();
+    list.push({from:tripDays()[dayIndex], label:"", code:"", tz:list[list.length-1].tz});
+    state.meta.segments=list; commit(); openMenu();
+  };
+  const cw=$("#mCats");
+  Object.entries(state.categories).forEach(([k,c])=>{
+    const row=document.createElement("div"); row.className="catedit";
+    row.innerHTML='<input type="color" value="'+c.color+'"><input type="text" value="'+esc(c.label)+'">'+
+      (DEFAULT_CATEGORIES[k]?'<span style="width:34px"></span>':'<button class="btn sm dan" style="flex:0 0 auto;padding:8px 10px">削除</button>');
+    const [ci,ti]=row.querySelectorAll("input");
+    ci.onchange=()=>{ state.categories[k].color=ci.value; commit(); };
+    ti.onchange=()=>{ state.categories[k].label=ti.value||k; commit(); };
+    const del=row.querySelector("button");
+    if(del) del.onclick=()=>{
+      Object.values(state.events).forEach(e=>{ if(e.cat===k) e.cat="other"; });
+      delete state.categories[k]; commit(); openMenu();
+    };
+    cw.appendChild(row);
+  });
+  $("#mAddCat").onclick=()=>{
+    const name=prompt("カテゴリ名"); if(!name) return;
+    state.categories["c"+uid()]={label:name,color:"#7bb3ff"};
+    commit(); openMenu();
+  };
+  $("#mRoomGo").onclick=()=>{
+    const v=$("#mRoom").value.trim().replace(/[^A-Za-z0-9_-]/g,"");
+    if(!v) return;
+    location.hash="room="+v; location.reload();
+  };
+  $("#mShare").onclick=()=>copyText(location.origin+location.pathname+"#room="+ROOM_ID);
+  $("#menuBody").querySelectorAll("[data-restore]").forEach(b=>b.onclick=()=>{ restore(b.dataset.restore); openMenu(); });
+  $("#mExport").onclick=()=>{
+    const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});
+    const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+    a.download=(state.meta.name||"trip")+".json"; a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href),500);
+  };
+  $("#mImport").onclick=()=>{
+    const inp=document.createElement("input"); inp.type="file"; inp.accept="application/json";
+    inp.onchange=()=>{ const f=inp.files[0]; if(!f) return;
+      const rd=new FileReader(); rd.onload=()=>{ try{ state=normalize(JSON.parse(rd.result)); dayIndex=0; closeSheets(); commit(); toast("読み込みました"); }catch(e){ toast("読み込めませんでした"); } };
+      rd.readAsText(f); };
+    inp.click();
+  };
+  $("#mReset").onclick=()=>{ if(confirm("サンプルの旅程に戻します。よろしいですか？")){ state=seedData(); dayIndex=0; closeSheets(); commit(); } };
+  openSheet("#sheetMenu");
+}
+
+/* ------------------------- PWA ------------------------- */
+function setupPWA(){
+  const cv=document.createElement("canvas"); cv.width=cv.height=512;
+  const x=cv.getContext("2d");
+  const g=x.createLinearGradient(0,0,512,512); g.addColorStop(0,"#1a73e8"); g.addColorStop(1,"#8e24aa");
+  x.fillStyle=g; x.fillRect(0,0,512,512);
+  x.fillStyle="#ffffff"; x.font="bold 300px -apple-system,sans-serif";
+  x.textAlign="center"; x.textBaseline="middle"; x.fillText("旅",256,276);
+  const icon=cv.toDataURL("image/png");
+  const link=document.createElement("link"); link.rel="apple-touch-icon"; link.href=icon; document.head.appendChild(link);
+  const manifest={
+    name:(state&&state.meta.name)||"旅程プランナー", short_name:"旅程",
+    start_url:location.pathname+location.search+location.hash,
+    scope:"./", display:"standalone", orientation:"portrait",
+    background_color:"#ffffff", theme_color:"#ffffff",
+    icons:[{src:icon,sizes:"512x512",type:"image/png",purpose:"any maskable"}]
+  };
+  const m=document.createElement("link"); m.rel="manifest";
+  m.href=URL.createObjectURL(new Blob([JSON.stringify(manifest)],{type:"application/manifest+json"}));
+  document.head.appendChild(m);
+  if("serviceWorker" in navigator){
+    navigator.serviceWorker.register("./sw.js").catch(()=>{});  // sw.js があればオフライン対応（無くてもOK）
+  }
+}
+
+/* ------------------------- 起動 ------------------------- */
+function boot(){
+  let saved=null;
+  try{ saved=JSON.parse(localStorage.getItem(LS_KEY)||"null"); }catch(e){}
+  state = saved ? normalize(saved) : seedData();
+  const ds=tripDays();
+  const today=toKey(new Date());
+  const i=ds.indexOf(today); dayIndex = i>=0?i:0;
+  render();
+  setupPWA();
+  initFirebase();
+  // 8:00 あたりが見えるようにスクロール
+  setTimeout(()=>{ $("#scroller").scrollTop = Math.max(0,(8*60-DAY_START)*PX_PER_MIN-20); },60);
+  setInterval(placeNowLine, 60000);
+}
+$("#btnMenu").onclick=openMenu;
+$("#fab").onclick=()=>openEditor(null, 600);
+window.addEventListener("hashchange",()=>location.reload());
+boot();
+</script>
+</body>
+</html>
